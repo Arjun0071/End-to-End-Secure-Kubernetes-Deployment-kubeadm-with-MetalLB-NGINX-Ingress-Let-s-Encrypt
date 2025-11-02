@@ -59,16 +59,16 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y containerd
 sudo mkdir -p /etc/containerd
 ```
-# Generate default config
+#### Generate default config
 ```
 sudo containerd config default | sudo tee /etc/containerd/config.toml
 ```
-# Restart & enable
+#### Restart & enable
 ```
 sudo systemctl restart containerd
 sudo systemctl enable containerd
 ```
-# Check status
+#### Check status
 ```
 sudo systemctl status containerd
 ```
