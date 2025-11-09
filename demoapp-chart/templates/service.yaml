@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "demoapp-chart.fullname" . }}
+  labels:
+    {{- include "demoapp-chart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8000
+      nodePort: {{ .Values.service.nodePort }}
+      protocol: TCP
+  selector:
+    {{- include "demoapp-chart.selectorLabels" . | nindent 4 }}
