@@ -261,12 +261,12 @@ If cert-manager successfully issued the certificate and Ingress is configured pr
 ## Screenshots:
 ### Application Accessible via DNS Hostname
 <p align="center">
-<img width="800" height="400" alt="image" src="<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/f0931074-d3dd-45cc-9bdb-15b2ec47a14b" />
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/f0931074-d3dd-45cc-9bdb-15b2ec47a14b" />
 " />
 </p>
 
 ### Verified HTTPS Connection
 <p align="center">
-<img width="800" height="400" alt="image" src="<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/693de705-1e37-4169-ab9e-cdb3a24554b7" />
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/693de705-1e37-4169-ab9e-cdb3a24554b7" />
 " />
 </p>
