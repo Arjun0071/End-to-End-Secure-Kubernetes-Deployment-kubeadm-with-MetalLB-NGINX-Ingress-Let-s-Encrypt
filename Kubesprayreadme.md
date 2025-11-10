@@ -155,6 +155,7 @@ kubectl config use-context <context-name>
 ```
 ### Master Node Setup
 **1.Helm: [Helm Installation](https://helm.sh/docs/intro/install/)**
+
 **2.MetalLB: [Install MetalLB](https://metallb.universe.tf/installation/)**
 Apply MetalLB address pool configuration (file exists in repo and make changes to it accordingly)
 This repo contains metallb-config.yaml — apply that file:
@@ -172,7 +173,7 @@ kubectl get svc -n ingress-nginx
 ```
 The ingress-nginx-controller service should get an EXTERNAL-IP assigned by MetalLB.
 
-**4.Deploy Application**
+**4.Deploy Application:**
 Deploy your application using the Helm chart in the repo:
 ```
 helm install <your_helm_chart_name> ./<path_to_chart> --namespace default --create-namespace
