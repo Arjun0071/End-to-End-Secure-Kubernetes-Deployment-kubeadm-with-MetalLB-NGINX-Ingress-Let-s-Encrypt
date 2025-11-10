@@ -89,9 +89,9 @@ sudo apt install -y git python3-pip sshpass curl python3-venv
 
 **2. Set up Python virtual environment**
 
-1.[Creating and Activating a Python Virtual Environment](https://docs.python.org/3/library/venv.html)
+[Creating and Activating a Python Virtual Environment](https://docs.python.org/3/library/venv.html)
 
-2. [Ansible Installation via pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install)
+[Ansible Installation via pip](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html#pip-install)
 
 Make local binaries accessible and Verify  Installation
 ```
