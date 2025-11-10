@@ -135,7 +135,7 @@ sudo chown root:root /root/.kube/config
 sudo chmod 600 /root/.kube/config
 ls -l /root/.kube/config
 ```
-### 8. **Kubectl:** [Install kubectl on Jump Server](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+**8. **Kubectl:** [Install kubectl on Jump Server](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)**
 
 
 Verify connectivity:
@@ -154,58 +154,48 @@ kubectl config get-contexts
 kubectl config use-context <context-name>
 ```
 ### Master Node Setup
-**1.Helm Installation**
-```
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-helm version
-```
-**2.Deploy MetalLB**
-
-1. Add the Helm repo & install MetalLB
-```
-helm repo add metallb https://metallb.github.io/metallb
-helm repo update
-helm install metallb metallb/metallb -n metallb-system --create-namespace
-kubectl get pods -n metallb-system
-```
-
-2. Apply MetalLB configuration from the repo
+**1.Helm: [Helm Installation](https://helm.sh/docs/intro/install/)**
+**2.MetalLB: [Install MetalLB](https://metallb.universe.tf/installation/)**
+Apply MetalLB address pool configuration (file exists in repo and make changes to it accordingly)
+This repo contains metallb-config.yaml — apply that file:
 
 kubectl apply -f metallb-config.yaml
 
+The metallb-config.yaml in this repo defines the IPAddressPool and L2Advertisement used by MetalLB. Edit it if you need a different range for your environment.
 
 ***Note: The repository contains the configuration files metallb-config.yaml, cluster-issuer.yaml, and ingress.yaml. You can use them as templates and modify them according to your environment (e.g., IP ranges, DNS names, service names).***
 
-**3.Deploy NGINX Ingress Controller**
+**3.NGINX Ingress Controller: [Deploy Ingress NGINX](https://platform9.com/learn/v1.0/tutorials/nginix-controller-via-yaml)**
 ```
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 kubectl get pods -n ingress-nginx
 kubectl get svc -n ingress-nginx
 ```
-**4.Deploy Application**
+The ingress-nginx-controller service should get an EXTERNAL-IP assigned by MetalLB.
 
+**4.Deploy Application**
 Deploy your application using the Helm chart in the repo:
 ```
-helm install fastapi-release ./demoapp-chart
+helm install <your_helm_chart_name> ./<path_to_chart> --namespace default --create-namespace
 ```
-**5.Install Cert-Manager**
+**5.Cert-Manager: [Install Cert-Manager](https://cert-manager.io/docs/installation/)**
 ```
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
 kubectl get pods -n cert-manager
 ```
-
-Apply ClusterIssuer and Certificate from the repo:
+Apply ClusterIssuer (file exists in repo make changes to it accordingly)
+This repo contains clusterissuer.yaml (configures ACME/Let’s Encrypt). Apply it:
 ```
 kubectl apply -f cluster-issuer.yaml
-kubectl apply -f ingress.yaml
 ```
+**6. Apply the Ingress resource (file exists in repo)**
+This repo contains ingress.yaml (Update the placeholder values accordingly). Apply it:
 
-Verify certificate issuance:
-```
-kubectl get certificate -A
-kubectl describe ingress -A
-```
+kubectl apply -f ingress.yaml
+
+
+ingress.yaml references the ClusterIssuer letsencrypt-prod (cert-manager) and requests a TLS certificate. cert-manager will create a Certificate and attempt ACME HTTP01 validation.
+
 ## Configure Port-Forward on Jump Server
+Final step: configure the Jump Server so the cluster is accessible externally.
 ```
 sudo kubectl port-forward svc/ingress-nginx-controller -n ingress-nginx 80:80 443:443 --address 0.0.0.0
 ```
@@ -251,6 +241,13 @@ sudo ufw allow 443/tcp
 sudo ufw reload
 ```
 Access the Application
+Verify Cert-Manager & Ingress
+```
+kubectl get certificate -A
+kubectl describe certificate myapi-cert -n default   # or name used in repo
+kubectl describe ingress fastapi-ingress -n default  # or the ingress name in repo
+```
+If Certificate shows Ready=True, the TLS secret exists and you should be able to access the app via HTTPS.
 
 Visit:
 
