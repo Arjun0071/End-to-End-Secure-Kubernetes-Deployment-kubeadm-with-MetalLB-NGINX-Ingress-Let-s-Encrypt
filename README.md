@@ -16,8 +16,8 @@ This README describes a hands-on, end-to-end setup used to deploy a Python web a
 5. [Worker node — join the cluster]
 6. [Complete Master node — MetalLB, Ingress, Cert-Manager, App Deploy]
 7. [Jump Server — kubeconfig, kubectl, persistent port-forwarding] 
-8. [Screenshots (placeholders)]  
-
+8. [Screenshots]  
+9. [CI/CD Integration] 
 
 ---
 
@@ -277,3 +277,135 @@ If cert-manager successfully issued the certificate and Ingress is configured pr
 
 
 
+
+
+
+
+## CI/CD Integration — Automated Build & Deployment via GitHub Actions
+This project integrates a fully automated CI/CD pipeline to streamline Docker image creation, Helm upgrades, and cluster deployment on the private Kubernetes setup built using kubeadm.
+
+### Overview
+
+Whenever code is pushed to the main branch, the pipeline automatically:
+Builds and pushes the Docker image to Docker Hub.
+Triggers deployment on the Kubernetes master node (via Jump Server) using Helm upgrade to roll out the updated image.
+This ensures a continuous delivery loop: every code change is built, containerized, and deployed securely to the private cluster.
+
+---
+
+### 🚀 1. Continuous Integration (CI) — Build and Push Docker Image
+
+**Workflow File:** `.github/workflows/ci.yml`
+
+This workflow automates the build and image-push process every time a commit is pushed to the **main branch**.
+
+#### 🔧 Steps
+
+**1. Checkout Repository**  
+   Fetches the latest code from the repository.
+
+**2. Docker Hub Authentication**  
+   Logs in to Docker Hub using stored **GitHub Secrets**:  
+   - `DOCKERHUB_USERNAME`  
+   - `DOCKERHUB_TOKEN`
+
+**3. Build Docker Image**  
+   Builds a Docker image of the FastAPI application and tags it with the unique Git commit SHA for version traceability:
+   ```bash
+   docker build -t <DOCKERHUB_USERNAME>/fastapi-demo:<GITHUB_SHA> .
+   ```
+**4. Push Image to Docker Hub**
+   Pushes the built image to Docker Hub:
+   ```
+   docker push <DOCKERHUB_USERNAME>/fastapi-demo:<GITHUB_SHA>
+   ```
+
+**5. Expose Image Tag for CD Pipeline**
+   Exports the built image tag (GITHUB_SHA) so the CD workflow can use it during deployment.
+
+## 🧩 2. Continuous Deployment (CD) — Helm-Based Deployment via Jump Server
+
+**Workflow File:** `.github/workflows/cd.yml`
+
+This workflow triggers automatically after the **CI workflow** completes successfully.  
+It securely connects to the **Jump Server**, which has SSH access to the **Kubernetes master node**, and deploys the latest Docker image using **Helm**.
+
+---
+
+### 🔧 Steps
+
+**1. Checkout Repository**  
+   Clones the repository to access the Helm chart.
+
+**2. Set Up SSH Authentication**  
+   Configures the SSH agent using a private key stored in **GitHub Secrets**:  
+   - `SSH_PRIVATE_KEY`
+
+**3. Deploy via Jump Server**  
+   Establishes a secure SSH connection to the Jump Server, then connects to the Kubernetes master node to perform the Helm upgrade.  
+
+   Uses these environment variables (defined as GitHub Secrets):  
+   - `JUMP_USER`, `JUMP_HOST` — Jump Server credentials  
+   - `MASTER_USER`, `MASTER_IP` — Master node credentials  
+   - `DOCKERHUB_USERNAME` — Docker Hub username  
+
+**4. Helm Upgrade Execution**  
+   On the master node, the workflow ensures the Helm chart exists at:  
+   `/home/<MASTER_USER>/FastAPI-CI-CD/demoapp-chart`  
+
+   Then executes:
+   ```
+   helm upgrade --install fastapi-release /home/<MASTER_USER>/FastAPI-CI-CD/demoapp-chart \
+     --reuse-values \
+     --set image.repository=<DOCKERHUB_USERNAME>/fastapi-demo \
+     --set image.tag=<GITHUB_SHA> \
+     --set image.pullPolicy=Always \
+     --namespace default \
+     --atomic
+   ```
+  
+  The --reuse-values flag ensures existing service configurations (like NodePort) are preserved while updating only the image
+
+  ## 🔐 3. Secrets Used
+
+| Secret Name | Description |
+|--------------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `SSH_PRIVATE_KEY` | Private key for SSH access |
+| `JUMP_USER`, `JUMP_HOST` | Jump Server SSH credentials |
+| `MASTER_USER`, `MASTER_IP` | Kubernetes Master Node credentials |
+
+---
+
+## 🧠 4. Workflow Trigger
+
+The **CD workflow** runs only after the **CI workflow** (`CI- Build and push the Docker Image`) completes successfully:
+
+```yaml
+on:
+  workflow_run:
+    workflows: ["CI- Build and push the Docker Image"]
+    types:
+      - completed
+```
+This ensures only a successfully built and pushed image is deployed to the cluster.
+
+## 📊 5. Summary
+
+| Stage | Tool | Description |
+|--------|------|-------------|
+| **CI** | Docker + GitHub Actions | Builds and pushes the FastAPI image to Docker Hub |
+| **CD** | Helm + SSH + Jump Server | Securely deploys the updated image to the Kubernetes cluster |
+| **Security** | GitHub Secrets | Manages all sensitive credentials safely |
+
+---
+
+## End Result
+
+Each new commit on the **main branch** automatically:  
+- Builds a Docker image  
+- Pushes it to **Docker Hub**  
+- Triggers a **Helm-based deployment** to your private Kubernetes cluster  
+
+> Achieving a **zero-touch, fully automated CI/CD pipeline** — secure, version-controlled, and production-ready.
