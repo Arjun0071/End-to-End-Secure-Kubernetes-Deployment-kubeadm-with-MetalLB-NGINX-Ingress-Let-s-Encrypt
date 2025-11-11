@@ -275,5 +275,4 @@ If cert-manager successfully issued the certificate and Ingress is configured pr
 ### Verified HTTPS Connection
 <p align="center">
 <img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/693de705-1e37-4169-ab9e-cdb3a24554b7" />
-" />
 </p>
